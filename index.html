@@ -33,35 +33,45 @@
 
 <div class="main-wrap">
 
-You should use the same language as the user did if possible.
-
-  <div>backendUrl</div>
-  <input type="text" class="form-control" v-model="data.backendUrl" placeholder="http:xxx.com/xx/xx">
-
-  <div>password</div>
-  <input type="text" class="form-control" v-model="data.password" placeholder="xxxxxx">
-
-
-  <div>You are a helpful assistant designed to output JSON.</div>
-  <div>Your Task is:</div>
-  <input type="text" class="form-control" v-model="data.taskDesc" placeholder="判断A和B是否是近义词">
-
-  <div>You will be given a request with the following format:</div>
-  <input type="text" class="form-control" v-model="data.reqFormat" placeholder='{ "A": "天才", "B": "黄瓜" }'>
-
-  <div>You should respond in the following format:</div>
-  <input type="text" class="form-control" v-model="data.resFormat" placeholder='{ "Re": false }'>
-
-  <div>You should use the same language as the user did if possible.</div>
+  <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <h5 class="mb-0">🔑 <code>SERVER</code></h5>
+    <div>backendUrl</div>
+    <input type="text" class="form-control" v-model="data.backendUrl" placeholder="http:xxx.com/xx/xx">
+    <div>password</div>
+    <input type="text" class="form-control" v-model="data.password" placeholder="xxxxxx">
+  </div>
 
 
-  <div>query:</div>
-  <input type="text" class="form-control" v-model="data.query" placeholder='{ "A": "天才", "B": "黄瓜" }'>
-  <!-- <div>model:</div><input type="text" class="form-control" v-model="data.model" placeholder="gpt-3.5-turbo-1106"> -->
 
-  <button :class='`btn btn-primary${data.running?" disabled":""}`' type="button" @click="onRun">Run</button>
+  <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <h5 class="mb-0">🌐 <code>SYSTEM</code></h5>
+    <div>You are a helpful assistant designed to output JSON.</div>
+    <div>Your Task is:</div>
+    <input type="text" class="form-control" v-model="data.taskDesc" placeholder="判断A和B是否是近义词">
 
-  <div>{{data.result?.data??data.result?.error}}</div>
+    <div>You will be given a request with the following format:</div>
+    <input type="text" class="form-control" v-model="data.reqFormat" placeholder='{ "A": "天才", "B": "黄瓜" }'>
+
+    <div>You should respond in the following format:</div>
+    <input type="text" class="form-control" v-model="data.resFormat" placeholder='{ "Re": false }'>
+
+    <div>You should use the same language as the user did if possible.</div>
+  </div>
+
+
+  <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <h5 class="mb-0">🙂 <code>USER</code></h5>
+    <div class=""><input type="text" class="form-control" v-model="data.query" placeholder='{ "A": "天才", "B": "黄瓜" }'></div>
+    <!-- <div>model:</div><input type="text" class="form-control" v-model="data.model" placeholder="gpt-3.5-turbo-1106"> -->
+
+    <div class=""><button :class='`btn -btn-sm btn-primary${data.running?" disabled":""}`' type="button" @click="onRun">Run</button></div>
+  </div>
+
+
+  <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <h5 class="mb-0">🤖 <code>AGENT</code></h5>
+    <pre class="mb-0 text-wrap">{{data.result?.data??data.result?.error??("Ready...")}}</pre>
+  </div>
 
 </div>
 
@@ -143,7 +153,7 @@ const MainApp = {
       taskDesc: "判断A和B是否是近义词",
       reqFormat: `{ "A": "天才", "B": "黄瓜" }`,
       resFormat: `{ "Re": false }`,
-      query: "",
+      query: `{ "A": "天才", "B": "黄瓜" }`,
       result: null,
       running: false,
     });
