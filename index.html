@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- --- -->
+<head>
+<!-- --- -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-API</title>
+<link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+<!-- --- -->
+<style>
+.page-cover {
+  position: fixed;
+  top:0; right:0; bottom:0; left:0;
+  overflow: hidden;
+  background: #eee;
+  z-index: 99999;
+}
+</style>
+<!-- --- -->
+</head>
+<!-- --- -->
+<body>
+<!-- --- -->
+<div class="app" id="app">
+<!-- --- -->
+
+<div class="page-cover" v-if="false"><div class="container pt-5 text-center">
+  <div class="row"><div><h2>AI-API</h2></div></div>
+  <div class="row"><div><p>loading...</p></div></div>
+</div></div>
+
+
+<div class="main-wrap">
+
+You should use the same language as the user did if possible.
+
+  <div>backendUrl</div>
+  <input type="text" class="form-control" v-model="data.backendUrl" placeholder="http:xxx.com/xx/xx">
+
+  <div>password</div>
+  <input type="text" class="form-control" v-model="data.password" placeholder="xxxxxx">
+
+
+  <div>You are a helpful assistant designed to output JSON.</div>
+  <div>Your Task is:</div>
+  <input type="text" class="form-control" v-model="data.taskDesc" placeholder="判断A和B是否是近义词">
+
+  <div>You will be given a request with the following format:</div>
+  <input type="text" class="form-control" v-model="data.reqFormat" placeholder='{ "A": "天才", "B": "黄瓜" }'>
+
+  <div>You should respond in the following format:</div>
+  <input type="text" class="form-control" v-model="data.resFormat" placeholder='{ "Re": false }'>
+
+  <div>You should use the same language as the user did if possible.</div>
+
+
+  <div>query:</div>
+  <input type="text" class="form-control" v-model="data.query" placeholder='{ "A": "天才", "B": "黄瓜" }'>
+  <!-- <div>model:</div><input type="text" class="form-control" v-model="data.model" placeholder="gpt-3.5-turbo-1106"> -->
+
+  <button :class='`btn btn-primary${data.running?" disabled":""}`' type="button" @click="onRun">Run</button>
+
+  <div>{{data.result?.data??data.result?.error}}</div>
+
+</div>
+
+
+<!-- --- -->
+</div>
+<!-- --- -->
+<script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.js"></script>
+<!-- <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script> -->
+<!-- <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.runtime.global.prod.min.js"></script> -->
+<script>
+
+function makeInstruction(task, reqFormat, resFormat) {
+  return instructionTemplate.replace("[<[([[TASK_DESCRIPTION]])]>]", task).replace("[<[([[REQ_FORMAT]])]>]", reqFormat).replace("[<[([[RES_FORMAT]])]>]", resFormat);
+}
+
+const onMountedFn = async (store, data) => {
+  const myStoredData = await store.getItem("myStoredData")??{};
+  Object.assign(data, myStoredData);
+};
+
+const onUpdatedFn = async (store, data) => {
+  const toBeStored = {...data, result: null};
+  await store.setItem("myStoredData", toBeStored);
+};
+
+const onRunFn = async (data) => {
+  data.running = true;
+  data.result = null;
+  const {
+    backendUrl,
+    password,
+    query,
+    model,
+    taskDesc: task,
+    reqFormat,
+    resFormat,
+  } = data;
+  try {
+    if (!task?.length) throw new Error("task is empty");
+    if (!query?.length) throw new Error("query is empty");
+
+    const res = await axios.post(data.backendUrl, {
+      query,
+      task,
+      reqFormat,
+      resFormat,
+      // model,
+      password,
+    });
+
+    console.log(res.data);
+
+    data.result = res.data;
+    data.running = false;
+
+  } catch (err) {
+
+    console.error(err);
+    data.result = {type: "error", error: err};
+    data.running = false;
+
+  }
+};
+
+
+const { reactive, readonly, ref, toRefs, computed, onMounted, onUpdated } = Vue;
+const MainApp = {
+  setup() {
+    const store = (localforage.createInstance({
+      name: "my-ai-api-ui",
+    }));
+    const data = Vue.reactive({
+      backendUrl: "",
+      password: "",
+      model: "gpt-3.5-turbo-1106", // gpt-4-1106-preview
+      taskDesc: "判断A和B是否是近义词",
+      reqFormat: `{ "A": "天才", "B": "黄瓜" }`,
+      resFormat: `{ "Re": false }`,
+      query: "",
+      result: null,
+      running: false,
+    });
+    onMounted(() => {
+      onMountedFn(store, data);
+    });
+    onUpdated(() => {
+      onUpdatedFn(store, data);
+    });
+
+    function onRun() {
+      onRunFn(data);
+    }
+
+    return {
+      data,
+      onRun,
+    };
+  },
+};
+const theApp = Vue.createApp(MainApp);
+const app = theApp.mount("#app");
+</script>
+</body>
+</html>
