@@ -77,8 +77,10 @@
 
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <div class=""><button :class='`btn -btn-sm btn-secondary`' type="button" @click="()=>{data.collapsed=!data.collapsed}">{{data.collapsed?"collapsed: on":"collapsed: off"}}</button></div>
+
     <h5 class="mb-0">🤖 <code>AGENT</code></h5>
-    <pre class="pre mb-0 --text-wrap text-break">{{data.result?.data??data.result?.error??(data.running?"Thinking...":":)")}}</pre>
+    <pre :class="`pre mb-0 text-break ${data.collapsed?'':'--'}text-wrap`">{{data.result?.data??data.result?.error??(data.running?"Thinking...":":)")}}</pre>
   </div>
 
 </div>
@@ -148,6 +150,25 @@ const onRunFn = async (data) => {
   }
 };
 
+const default_taskDesc = `你正在进行词汇推理能力测试。
+- 题目（Q）会给出若干含有 _XXX_ 槽位的短语，你需要在这些槽位填入合适的单词，要求填入的单词能够让每一个短语都成立。
+1. 列举：**尽可能多地**列举可能**满足要求**的单词，将它们作为候选词语填入候选项（C）字段。
+2. 检查：接着，请对C中的单词进行逐个考察，将词语填入每个短语中，判断短语是否正确（用✅和❌表示）。将检查过程填入测试（T）字段。
+3. 回答：根据T中的结果，选出所有短语都成立的单词，填入答案（A）字段。
+
+**注意：请尽可能在第一步就列举正确的单词！**`;
+
+const default_reqFormat = `{"Q": ["提高_XXX_", "很高的_XXX_"]}`;
+const default_resFormat = `{ "C": ["成绩", "警惕", "山脉", ...],
+  "T:" {
+    "成绩": [["提高成绩", "✅"], ["很高的成绩", "✅"]],
+    "警惕": [["提高警惕", "✅"], ["很高的警惕", "✅"]],
+    "山脉": [["提高山脉", "❌"], ["很高的山脉", "✅"]],
+    ...
+  },
+  "A": ["成绩", "警惕", ...] }`;
+  const default_query = `{ "Q": ["进行_XXX_", "_XXX_身体", "保持_XXX_状态"] }`;
+
 
 const { reactive, readonly, ref, toRefs, computed, onMounted, onUpdated } = Vue;
 const MainApp = {
@@ -159,12 +180,13 @@ const MainApp = {
       backendUrl: "",
       password: "",
       model: "gpt-3.5-turbo-1106", // gpt-4-1106-preview
-      taskDesc: "判断A和B是否是近义词",
-      reqFormat: `{ "A": "天才", "B": "黄瓜" }`,
-      resFormat: `{ "Re": false }`,
-      query: `{ "A": "天才", "B": "黄瓜" }`,
+      taskDesc: default_taskDesc,
+      reqFormat: default_reqFormat,
+      resFormat: default_resFormat,
+      query: default_query,
       result: null,
       running: false,
+      collapsed: false,
     });
     onMounted(() => {
       onMountedFn(store, data);
