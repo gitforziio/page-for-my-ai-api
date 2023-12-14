@@ -46,16 +46,16 @@
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
     <h5 class="mb-0">🌐 <code>SYSTEM</code></h5>
     <div>You are a helpful assistant designed to output JSON.</div>
-    <div>Your Task is:</div>
+    <div>Your task:</div>
     <input type="text" class="form-control" v-model="data.taskDesc" placeholder="判断A和B是否是近义词">
 
-    <div>You will be given a request with the following format:</div>
+    <div>Request format:</div>
     <input type="text" class="form-control" v-model="data.reqFormat" placeholder='{ "A": "天才", "B": "黄瓜" }'>
 
-    <div>You should respond in the following format:</div>
+    <div>Respond format:</div>
     <input type="text" class="form-control" v-model="data.resFormat" placeholder='{ "Re": false }'>
 
-    <div>You should use the same language as the user did if possible.</div>
+    <div>You should use the same language as the users whenever possible.</div>
   </div>
 
 
