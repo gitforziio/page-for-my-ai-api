@@ -47,7 +47,38 @@
 
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
+    <h5 class="mb-0">💾 <code>SAVED</code></h5>
+
+    <div class="d-flex flex-row gap-2">
+      <!-- <button :class='`btn btn-sm btn-light`' type="button" @click="()=>{}">importAll</button> -->
+      <button :class='`btn btn-sm btn-light`' type="button" @click="onExportAll">exportAll</button>
+    </div>
+
+    <div class="d-flex flex-row gap-2">
+      <select
+      v-model="savedForms.selected"
+      class="form-select"
+      aria-label="Select"
+      >
+        <option value="[[none]]" selected>[[none]]</option>
+        <option v-for="(item, idx) in savedForms.list" :value="idx" selected>{{`[[-- ${(item?.query??"")?.slice?.(0,20)} --]][[-- ${(item?.taskDesc??"")?.slice?.(0,20)} --]]`}}</option>
+      </select>
+      <button :class='`btn btn-sm btn-outline-danger`' type="button" @click="onDelete">delete</button>
+      <button :class='`btn btn-sm btn-outline-primary`' type="button" @click="onSelect">select</button>
+    </div>
+  </div>
+
+
+
+  <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
     <h5 class="mb-0">🌐 <code>SYSTEM</code></h5>
+
+    <div class="d-flex flex-row gap-2">
+      <!-- <button :class='`btn btn-sm btn-light`' type="button" @click="()=>{}">import</button> -->
+      <button :class='`btn btn-sm btn-light`' type="button" @click="onExport">export</button>
+      <button :class='`btn btn-sm btn-light`' type="button" @click="onSave">save</button>
+    </div>
+
     <div>You are a helpful assistant designed to output JSON.</div>
     <div>Your task:</div>
     <textarea class="form-control font-monospace" v-model="data.taskDesc" placeholder="判断A和B是否是近义词"></textarea>
@@ -77,7 +108,7 @@
 
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
-    <div class=""><button :class='`btn -btn-sm btn-secondary`' type="button" @click="()=>{data.collapsed=!data.collapsed}">{{data.collapsed?"collapsed: on":"collapsed: off"}}</button></div>
+    <div class=""><button :class='`btn -btn-sm btn-${data.collapsed?"light":"secondary"}`' type="button" @click="()=>{data.collapsed=!data.collapsed}">{{data.collapsed?"collapsed: on":"collapsed: off"}}</button></div>
 
     <h5 class="mb-0">🤖 <code>AGENT</code></h5>
     <pre :class="`pre mb-0 text-break ${data.collapsed?'':'--'}text-wrap`">{{data.result?.data??data.result?.error??(data.running?"Thinking...":":)")}}</pre>
@@ -89,6 +120,7 @@
 <!-- --- -->
 </div>
 <!-- --- -->
+<script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.js"></script>
@@ -100,14 +132,54 @@ function makeInstruction(task, reqFormat, resFormat) {
   return instructionTemplate.replace("[<[([[TASK_DESCRIPTION]])]>]", task).replace("[<[([[REQ_FORMAT]])]>]", reqFormat).replace("[<[([[RES_FORMAT]])]>]", resFormat);
 }
 
-const onMountedFn = async (store, data) => {
+const onMountedFn = async (store, data, savedForms) => {
   const myStoredData = await store.getItem("myStoredData")??{};
   Object.assign(data, myStoredData);
+  const myStoredFormsList = await store.getItem("myStoredFormsList")??[];
+  savedForms.list = myStoredFormsList;
 };
 
-const onUpdatedFn = async (store, data) => {
+const onUpdatedFn = async (store, data, savedForms) => {
   const toBeStored = {...data, result: null};
   await store.setItem("myStoredData", toBeStored);
+};
+
+const onSaveFn = async (store, savedForms, data) => {
+  savedForms.list.push(data);
+  const formsToBeStored = savedForms.list.map(form=>({...form, result: {...form?.result}}));
+  await store.setItem("myStoredFormsList", formsToBeStored);
+};
+
+const onSelectFn = async (store, savedForms, data) => {
+  const selectedForm = savedForms.list[savedForms.selected];
+  if (null == selectedForm) return;
+  Object.assign(data, selectedForm);
+};
+
+const onDeleteFn = async (store, savedForms, data) => {
+  const selectedForm = savedForms.list[savedForms.selected];
+  if (null == selectedForm) return;
+  savedForms.list.splice(savedForms.selected, 1);
+  const formsToBeStored = savedForms.list.map(form=>({...form, result: {...form?.result}}));
+  await store.setItem("myStoredFormsList", formsToBeStored);
+  savedForms.selected = null;
+};
+
+const onExportSelectedForm = async (store, savedForms, data) => {
+  const selectedForm = savedForms.list[savedForms.selected];
+  if (null == selectedForm) return;
+  const blob = new Blob([JSON.stringify(selectedForm)], {type: "application/json;charset=utf-8"});
+  saveAs(blob, "my-ai-api-form.json");
+};
+
+const onExportSavedForms = async (store, savedForms, data) => {
+  const blob = new Blob([JSON.stringify(savedForms.list)], {type: "application/json;charset=utf-8"});
+  saveAs(blob, "my-ai-api-forms.json");
+};
+
+const onExportData = async (store, savedForms, data) => {
+  const blob = new Blob([JSON.stringify({...data, password: undefined, running: undefined, collapsed: undefined})], {type: "application/json;charset=utf-8"});
+  saveAs(blob, "my-ai-api-data.json");
 };
 
 const onRunFn = async (data) => {
@@ -176,6 +248,10 @@ const MainApp = {
     const store = (localforage.createInstance({
       name: "my-ai-api-ui",
     }));
+    const savedForms = Vue.reactive({
+      list: [],
+      selected: {},
+    });
     const data = Vue.reactive({
       backendUrl: "",
       password: "",
@@ -188,20 +264,26 @@ const MainApp = {
       running: false,
       collapsed: false,
     });
-    onMounted(() => {
-      onMountedFn(store, data);
-    });
-    onUpdated(() => {
-      onUpdatedFn(store, data);
-    });
+    onMounted(() => { onMountedFn(store, data, savedForms); });
+    onUpdated(() => { onUpdatedFn(store, data, savedForms); });
 
-    function onRun() {
-      onRunFn(data);
-    }
+    function onRun() { onRunFn(data); }
+    function onSave() { onSaveFn(store, savedForms, data); }
+    function onSelect() { onSelectFn(store, savedForms, data); }
+    function onDelete() { onDeleteFn(store, savedForms, data); }
+
+    function onExport() { onExportData(store, savedForms, data); }
+    function onExportAll() { onExportSavedForms(store, savedForms, data); }
 
     return {
+      savedForms,
       data,
       onRun,
+      onSave,
+      onSelect,
+      onDelete,
+      onExport,
+      onExportAll,
     };
   },
 };
