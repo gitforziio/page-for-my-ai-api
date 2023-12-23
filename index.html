@@ -37,7 +37,7 @@
 <div class="main-wrap">
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
-    <div class="">version: 0.1.1</div>
+    <div class="">version: 0.1.2</div>
   </div>
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
@@ -85,13 +85,13 @@
 
     <div>You are a helpful assistant designed to output JSON.</div>
     <div>Your task:</div>
-    <textarea class="form-control font-monospace" v-model="data.taskDesc" placeholder="判断A和B是否是近义词"></textarea>
+    <textarea class="form-control font-monospace" v-model="data.taskDesc" placeholder="给定词语A和B，判断A和B是否满足命题P。"></textarea>
 
     <div>Request format:</div>
-    <textarea class="form-control font-monospace" v-model="data.reqFormat" placeholder='{ "A": "天才", "B": "黄瓜" }'></textarea>
+    <textarea class="form-control font-monospace" v-model="data.reqFormat" placeholder='{"A": "滋生", "B": "细菌", "P": "A可以描述B的产生方式"}'></textarea>
 
     <div>Respond format:</div>
-    <textarea class="form-control font-monospace" v-model="data.resFormat" placeholder='{ "Re": false }'></textarea>
+    <textarea class="form-control font-monospace" v-model="data.resFormat" placeholder='{"R": (bool), "Explain": "(解释)"}'></textarea>
 
     <div>You should use the same language as the users whenever possible.</div>
   </div>
@@ -99,7 +99,7 @@
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
     <h5 class="mb-0">🙂 <code>USER</code></h5>
-    <div class=""><textarea class="form-control font-monospace" v-model="data.query" placeholder='{ "A": "天才", "B": "黄瓜" }'></textarea></div>
+    <div class=""><textarea class="form-control font-monospace" v-model="data.query" placeholder='{"A": "愚蠢", "B": "人类", "P": "绝大多数的B都A"}'></textarea></div>
     <div>model:</div>
     <!-- <input type="text" class="form-control" v-model="data.model" placeholder="gpt-3.5-turbo-1106"> -->
     <select v-model="data.model" class="form-select" aria-label="Select your model">
@@ -160,6 +160,8 @@ const onSaveFn = async (store, savedForms, data) => {
     running: false,
   }));
   await store.setItem("myStoredFormsList", formsToBeStored);
+  const myStoredFormsList = await store.getItem("myStoredFormsList")??[];
+  savedForms.list = myStoredFormsList;
 };
 
 const onSelectFn = async (store, savedForms, data) => {
@@ -237,24 +239,29 @@ const onRunFn = async (data) => {
   }
 };
 
-const default_taskDesc = `你正在进行词汇推理能力测试。
-- 题目（Q）会给出若干含有 _XXX_ 槽位的短语，你需要在这些槽位填入合适的单词，要求填入的单词能够让每一个短语都成立。
-1. 列举：**尽可能多地**列举可能**满足要求**的单词，将它们作为候选词语填入候选项（C）字段。
-2. 检查：接着，请对C中的单词进行逐个考察，将词语填入每个短语中，判断短语是否正确（用✅和❌表示）。将检查过程填入测试（T）字段。
-3. 回答：根据T中的结果，选出所有短语都成立的单词，填入答案（A）字段。
+// const default_taskDesc = `你正在进行词汇推理能力测试。
+// - 题目（Q）会给出若干含有 _XXX_ 槽位的短语，你需要在这些槽位填入合适的单词，要求填入的单词能够让每一个短语都成立。
+// 1. 列举：**尽可能多地**列举可能**满足要求**的单词，将它们作为候选词语填入候选项（C）字段。
+// 2. 检查：接着，请对C中的单词进行逐个考察，将词语填入每个短语中，判断短语是否正确（用✅和❌表示）。将检查过程填入测试（T）字段。
+// 3. 回答：根据T中的结果，选出所有短语都成立的单词，填入答案（A）字段。
 
-**注意：请尽可能在第一步就列举正确的单词！**`;
+// **注意：请尽可能在第一步就列举正确的单词！**`;
+const default_taskDesc = `给定词语A和B，判断A和B是否满足命题P。`;
 
-const default_reqFormat = `{"Q": ["提高_XXX_", "很高的_XXX_"]}`;
-const default_resFormat = `{ "C": ["成绩", "警惕", "山脉", ...],
-  "T:" {
-    "成绩": [["提高成绩", "✅"], ["很高的成绩", "✅"]],
-    "警惕": [["提高警惕", "✅"], ["很高的警惕", "✅"]],
-    "山脉": [["提高山脉", "❌"], ["很高的山脉", "✅"]],
-    ...
-  },
-  "A": ["成绩", "警惕", ...] }`;
-  const default_query = `{ "Q": ["进行_XXX_", "_XXX_身体", "保持_XXX_状态"] }`;
+// const default_reqFormat = `{"Q": ["提高_XXX_", "很高的_XXX_"]}`;
+const default_reqFormat = `{"A": "滋生", "B": "细菌", "P": "A可以描述B的产生方式"}`;
+// const default_resFormat = `{ "C": ["成绩", "警惕", "山脉", ...],
+//   "T:" {
+//     "成绩": [["提高成绩", "✅"], ["很高的成绩", "✅"]],
+//     "警惕": [["提高警惕", "✅"], ["很高的警惕", "✅"]],
+//     "山脉": [["提高山脉", "❌"], ["很高的山脉", "✅"]],
+//     ...
+//   },
+//   "A": ["成绩", "警惕", ...] }`;
+
+const default_resFormat = `{"R": (bool), "Explain": "(解释)"}`;
+// const default_query = `{ "Q": ["进行_XXX_", "_XXX_身体", "保持_XXX_状态"] }`;
+const default_query = `{"A": "愚蠢", "B": "人类", "P": "绝大多数的B都A"}`;
 
 
 const { reactive, readonly, ref, toRefs, computed, onMounted, onUpdated } = Vue;
