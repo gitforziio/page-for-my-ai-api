@@ -37,7 +37,7 @@
 <div class="main-wrap">
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
-    <div class="">version: 0.1.2</div>
+    <div class="" @click="getIpAndCountryCode">version: 0.1.3</div>
   </div>
 
   <div class="d-flex flex-column m-2 p-2 gap-2 rounded border text-secondary bg-secondary bg-opacity-10">
@@ -199,6 +199,13 @@ const onExportData = async (store, savedForms, data) => {
   saveAs(blob, "my-ai-api-data.json");
 };
 
+const getIpAndCountryCode = async () => {
+  // const res = await axios.get("https://api.ipify.org?format=json");
+  const res = await axios.get("https://chat.deepseek.com/api/v0/ip_to_country_code");
+  console.log(res.data);
+  return res?.data?.data;
+};
+
 const onRunFn = async (data) => {
   data.running = true;
   data.result = null;
@@ -307,6 +314,7 @@ const MainApp = {
       onExport,
       onExportAll,
       makeItemText,
+      getIpAndCountryCode,
     };
   },
 };
